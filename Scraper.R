@@ -102,7 +102,9 @@ for (a in 1:nrow(years) ){
     #There are two formats used on Wikipedia, this will detect which one is present and scrape it accordingly
     if ( any(constituency.nodes %>% html_text() %>% str_detect(paste("Election\nPolitical result\nCandidate", sep = ""))) == TRUE ){
       
-      constituency.nodes <- subset(constituency.nodes,  (constituency.nodes %>% html_text() %>% str_detect(paste("Election\nPolitical result\nCandidate", sep = "")) == TRUE))
+      constituency.nodes <- subset(constituency.nodes,  (constituency.nodes %>% html_text() %>% str_detect(paste("General election ", years$year.name[a], sep = "")) == TRUE)
+                                                        |
+                                                        (constituency.nodes %>% html_text() %>% str_detect(paste(years$year.name[a], " general election", sep = "")) == TRUE))
       
       constituency.table <- html_table(constituency.nodes[1], fill = TRUE, header = TRUE)
       
@@ -155,7 +157,7 @@ for (a in 1:nrow(years) ){
                               "Votes",
                               "Percentage")
     
-    if ( str_detect("Register electors") == FALSE ){
+    if ( any(current.table$Party == "Registered electors") != TRUE ){
       dummy.table <- data.frame(Year = years$year.name[a],
                                 Constituency = constituencies.links$name[b],
                                 Party = "Registered electors",
@@ -165,8 +167,8 @@ for (a in 1:nrow(years) ){
       current.table <- rbind(current.table, dummy.table)
     }
     
-    current.table$Unopposed[current.table$Votes != "Unopposed"] <- "N"
-    current.table$Unopposed[current.table$Votes == "Unopposed"] <- "Y"
+    current.table$Unopposed[str_detect(current.table$Votes, regex("Unopposed", ignore_case = TRUE)) == FALSE] <- "N"
+    current.table$Unopposed[str_detect(current.table$Votes, regex("Unopposed", ignore_case = TRUE)) == TRUE] <- "Y"
     current.table$Votes[current.table$Unopposed == "Y"] <- current.table$Votes[current.table$Party == "Registered electors"]
     current.table$Percentage[current.table$Unopposed == "Y"] <- 100
     
