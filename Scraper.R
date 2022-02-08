@@ -155,10 +155,21 @@ for (a in 1:nrow(years) ){
                               "Votes",
                               "Percentage")
     
+    if ( str_detect("Register electors") == FALSE ){
+      dummy.table <- data.frame(Year = years$year.name[a],
+                                Constituency = constituencies.links$name[b],
+                                Party = "Registered electors",
+                                Candidate = "UNKNOWN ELECTORS",
+                                Votes = 9999999,
+                                Percentage = 100)
+      current.table <- rbind(current.table, dummy.table)
+    }
+    
     current.table$Unopposed[current.table$Votes != "Unopposed"] <- "N"
     current.table$Unopposed[current.table$Votes == "Unopposed"] <- "Y"
     current.table$Votes[current.table$Unopposed == "Y"] <- current.table$Votes[current.table$Party == "Registered electors"]
     current.table$Percentage[current.table$Unopposed == "Y"] <- 100
+    
     
     current.table <- subset(current.table, str_detect(current.table$Party, "Registered electors") == FALSE)
     current.table <- subset(current.table, str_detect(current.table$Party, "gain") == FALSE)
@@ -173,6 +184,7 @@ for (a in 1:nrow(years) ){
     current.table$Percentage <- gsub("\\([^][]*)", "", current.table$Percentage)
     
     current.table$Votes <- gsub(",", "", current.table$Votes)
+    current.table$Votes <- gsub("*", "", current.table$Votes, fixed = TRUE)
     current.table$Votes <- as.numeric(current.table$Votes)
     current.table$Percentage <- as.numeric(current.table$Percentage)
     
@@ -212,6 +224,6 @@ for (a in 1:nrow(years) ){
   }
   
   tables <- subset(tables, is.na(tables$Year) == FALSE)
-  write.csv(tables, paste(years$year.name[a], ".csv", sep = ""))
+  write.csv(tables, paste("Results/", years$year.name[a], ".csv", sep = ""))
   
 }
