@@ -66,7 +66,7 @@ for (a in 1:nrow(years) ){
   tables.count <- 0
   
   #Use the lists of MPs for each election to get a list of all the constituencies in that year
-  mplist.url <- paste("https://en.wikipedia.org/wiki/List_of_MPs_elected_in_the_", gsub(" ", "_", years$year.number[a]), "_United_Kingdom_general_election", sep = "")
+  mplist.url <- paste("https://en.wikipedia.org/wiki/List_of_MPs_elected_in_the_", gsub(" ", "_", years$year.name[a]), "_United_Kingdom_general_election", sep = "")
   
   mplist.page <- read_html(mplist.url)
   
@@ -86,8 +86,10 @@ for (a in 1:nrow(years) ){
   constituencies.links$names <- gsub("_(UK_Parliament_constituency)", "",constituencies.links$names, fixed = TRUE)
   constituencies.links$names <- gsub("_", " ", constituencies.links$names, fixed = TRUE)
   
+  constituencies.links <- unique(constituencies.links)
+  
   #Go through all the constituencies for the election
-  for (b in 1:nrow(constituencies.links) ){
+  for (b in c:nrow(constituencies.links) ){
     
     cat(paste(years$year.name[a], constituencies.links$names[b], "( a =", a, "/ b =", b, ")", "\n"))
     
@@ -125,7 +127,9 @@ for (a in 1:nrow(years) ){
       
       constituency.nodes <- subset(constituency.nodes,  (constituency.nodes %>% html_text() %>% str_detect(paste(years$year.name[a], ":", sep = "")) == TRUE
                                                         |
-                                                        constituency.nodes %>% html_text() %>% str_detect(paste(years$year.name[a], " general election:", sep = "")) == TRUE)
+                                                        constituency.nodes %>% html_text() %>% str_detect(paste(years$year.name[a], " general election:", sep = "")) == TRUE
+                                                        |
+                                                        constituency.nodes %>% html_text() %>% str_detect(paste(years$year.name[a], " Westminster election:", sep = "")) == TRUE)
                                                         &
                                                         constituency.nodes %>% html_text() %>% str_detect(regex("By-election", ignore_case = TRUE)) == FALSE
                                                         &
@@ -179,10 +183,12 @@ for (a in 1:nrow(years) ){
     # current.table <- subset(current.table, str_detect(current.table$Party, "Turnout") == FALSE)
     current.table <- subset(current.table, str_detect(current.table$Party, "Majority") == FALSE)
     current.table <- subset(current.table, str_detect(current.table$Party, " win") == FALSE)
+    current.table <- subset(current.table, str_detect(current.table$Party, "C indicates candidate endorsed by the coalition government.") == FALSE)
     
     
     current.table$Candidate <- gsub("\\[[^][]*]", "", current.table$Candidate)
     current.table$Votes <- gsub("\\([^][]*)", "", current.table$Votes)
+    current.table$Votes <- gsub("\\[[^][]*]", "", current.table$Votes)
     current.table$Percentage <- gsub("\\([^][]*)", "", current.table$Percentage)
     
     current.table$Votes <- gsub(",", "", current.table$Votes)
@@ -216,9 +222,10 @@ for (a in 1:nrow(years) ){
                                   Unopposed = current.table$Unopposed[1])
       
       current.table <- rbind(current.table, turnout.table)
+      
     }
     
-    
+    c <- c + 1
     
     tables[(tables.count + 1):(nrow(current.table) + tables.count), ] <- current.table
     tables.count <- tables.count + nrow(current.table)
