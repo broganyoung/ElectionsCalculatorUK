@@ -171,13 +171,17 @@ for (a in 1:nrow(years) ){
       current.table <- rbind(current.table, dummy.table)
     }
     
-    current.table$Unopposed[str_detect(current.table$Votes, regex("Unopposed", ignore_case = TRUE)) == FALSE] <- "N"
-    current.table$Unopposed[str_detect(current.table$Votes, regex("Unopposed", ignore_case = TRUE)) == TRUE] <- "Y"
+    if ( any(str_detect(current.table$Votes, regex("Unopposed", ignore_case = TRUE))) == TRUE){
+      current.table$Unopposed <- "Y"
+    } else {
+      current.table$Unopposed <- "N"
+    }
+    
     current.table$Votes[current.table$Unopposed == "Y"] <- current.table$Votes[current.table$Party == "Registered electors"]
     current.table$Percentage[current.table$Unopposed == "Y"] <- 100
     
     
-    current.table <- subset(current.table, str_detect(current.table$Party, "Registered electors") == FALSE)
+    # current.table <- subset(current.table, str_detect(current.table$Party, "Registered electors") == FALSE)
     current.table <- subset(current.table, str_detect(current.table$Party, "gain") == FALSE)
     current.table <- subset(current.table, str_detect(current.table$Party, " hold") == FALSE)
     # current.table <- subset(current.table, str_detect(current.table$Party, "Turnout") == FALSE)
@@ -185,6 +189,9 @@ for (a in 1:nrow(years) ){
     current.table <- subset(current.table, str_detect(current.table$Party, " win") == FALSE)
     current.table <- subset(current.table, str_detect(current.table$Party, "C indicates candidate endorsed by the coalition government.") == FALSE)
     
+    
+    current.table$Party <- gsub("Registered electors", "Electors", current.table$Party)
+    current.table$Candidate <- gsub("Registered electors", "Electors", current.table$Candidate)
     
     current.table$Candidate <- gsub("\\[[^][]*]", "", current.table$Candidate)
     current.table$Votes <- gsub("\\([^][]*)", "", current.table$Votes)
@@ -226,6 +233,10 @@ for (a in 1:nrow(years) ){
       
     }
     
+    #Re-calculate percentage
+    current.table$Percentage[current.table$Party == "Electors"] <- 100
+    current.table$Percentage[current.table$Party == "Turnout"] <- round(current.table$Votes[current.table$Party == "Turnout"]/current.table$Votes[current.table$Party == "Electors"]*100, 2)
+    current.table$Percentage[current.table$Party != "Turnout" & current.table$Party != "Electors"] <- round(current.table$Votes[current.table$Party != "Turnout" & current.table$Party != "Electors"]/current.table$Votes[current.table$Party == "Turnout"]*100, 2)
     
     tables[(tables.count + 1):(nrow(current.table) + tables.count), ] <- current.table
     tables.count <- tables.count + nrow(current.table)
