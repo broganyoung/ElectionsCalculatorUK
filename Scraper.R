@@ -188,6 +188,7 @@ for (a in 1:nrow(years) ){
     current.table <- subset(current.table, str_detect(current.table$Party, "Majority") == FALSE)
     current.table <- subset(current.table, str_detect(current.table$Party, " win") == FALSE)
     current.table <- subset(current.table, str_detect(current.table$Party, "C indicates candidate endorsed by the coalition government.") == FALSE)
+    current.table <- subset(current.table, str_detect(current.table$Party, "Quota") == FALSE)
     
     
     current.table$Party <- gsub("Registered electors", "Electors", current.table$Party)
@@ -205,8 +206,6 @@ for (a in 1:nrow(years) ){
     current.table$Percentage <- as.numeric(current.table$Percentage)
     
     #Check for turnout
-    
-    
     if ( any(str_detect(current.table$Party, "Turnout")) != TRUE ){
       
       if ( any(str_detect(current.table$Unopposed, "Y")) == TRUE ) {
@@ -230,6 +229,22 @@ for (a in 1:nrow(years) ){
                                   Unopposed = current.table$Unopposed[1])
       
       current.table <- rbind(current.table, turnout.table)
+      
+    }
+    
+    
+    #Check for registered electors
+    if ( any(str_detect(current.table$Party, "Electors")) != TRUE ){
+      
+      elector.table <- data.frame(Year = years$year.name[a],
+                                  Constituency = constituencies.links$names[b],
+                                  Party = "Electors",
+                                  Candidate = "Electors",
+                                  Votes = 9999999,
+                                  Percentage = 100,
+                                  Unopposed = current.table$Unopposed[1])
+      
+      current.table <- rbind(current.table, elector.table)
       
     }
     
