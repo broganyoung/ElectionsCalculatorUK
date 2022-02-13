@@ -89,7 +89,7 @@ for (a in 1:nrow(years) ){
   constituencies.links <- unique(constituencies.links)
   
   #Go through all the constituencies for the election
-  for (b in c:nrow(constituencies.links) ){
+  for (b in 1:nrow(constituencies.links) ){
     
     cat(paste(years$year.name[a], constituencies.links$names[b], "( a =", a, "/ b =", b, ")", "\n"))
     
@@ -191,8 +191,9 @@ for (a in 1:nrow(years) ){
     current.table$Votes <- gsub("\\[[^][]*]", "", current.table$Votes)
     current.table$Percentage <- gsub("\\([^][]*)", "", current.table$Percentage)
     
-    current.table$Votes <- gsub(",", "", current.table$Votes)
+    current.table$Votes <- gsub(",", "", current.table$Votes, fixed = TRUE)
     current.table$Votes <- gsub("*", "", current.table$Votes, fixed = TRUE)
+    current.table$Votes <- gsub(".", "", current.table$Votes, fixed = TRUE)
     current.table$Votes <- as.numeric(current.table$Votes)
     current.table$Percentage <- as.numeric(current.table$Percentage)
     
@@ -225,7 +226,6 @@ for (a in 1:nrow(years) ){
       
     }
     
-    c <- c + 1
     
     tables[(tables.count + 1):(nrow(current.table) + tables.count), ] <- current.table
     tables.count <- tables.count + nrow(current.table)
