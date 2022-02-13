@@ -161,15 +161,6 @@ for (a in 1:nrow(years) ){
                               "Votes",
                               "Percentage")
     
-    if ( any(current.table$Party == "Registered electors") != TRUE ){
-      dummy.table <- data.frame(Year = years$year.name[a],
-                                Constituency = constituencies.links$name[b],
-                                Party = "Registered electors",
-                                Candidate = "UNKNOWN ELECTORS",
-                                Votes = 9999999,
-                                Percentage = 100)
-      current.table <- rbind(current.table, dummy.table)
-    }
     
     if ( any(str_detect(current.table$Votes, regex("Unopposed", ignore_case = TRUE))) == TRUE){
       current.table$Unopposed <- "Y"
