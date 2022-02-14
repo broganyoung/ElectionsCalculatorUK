@@ -168,34 +168,6 @@ for (a in 1:nrow(years) ){
       current.table$Unopposed <- "N"
     }
     
-    current.table$Votes[current.table$Unopposed == "Y"] <- current.table$Votes[current.table$Party == "Registered electors"]
-    current.table$Percentage[current.table$Unopposed == "Y"] <- 100
-    
-    
-    # current.table <- subset(current.table, str_detect(current.table$Party, "Registered electors") == FALSE)
-    current.table <- subset(current.table, str_detect(current.table$Party, "gain") == FALSE)
-    current.table <- subset(current.table, str_detect(current.table$Party, " hold") == FALSE)
-    # current.table <- subset(current.table, str_detect(current.table$Party, "Turnout") == FALSE)
-    current.table <- subset(current.table, str_detect(current.table$Party, "Majority") == FALSE)
-    current.table <- subset(current.table, str_detect(current.table$Party, " win") == FALSE)
-    current.table <- subset(current.table, str_detect(current.table$Party, "C indicates candidate endorsed by the coalition government.") == FALSE)
-    current.table <- subset(current.table, str_detect(current.table$Party, "Quota") == FALSE)
-    
-    
-    current.table$Party <- gsub("Registered electors", "Electors", current.table$Party)
-    current.table$Candidate <- gsub("Registered electors", "Electors", current.table$Candidate)
-    
-    current.table$Candidate <- gsub("\\[[^][]*]", "", current.table$Candidate)
-    current.table$Votes <- gsub("\\([^][]*)", "", current.table$Votes)
-    current.table$Votes <- gsub("\\[[^][]*]", "", current.table$Votes)
-    current.table$Percentage <- gsub("\\([^][]*)", "", current.table$Percentage)
-    
-    current.table$Votes <- gsub(",", "", current.table$Votes, fixed = TRUE)
-    current.table$Votes <- gsub("*", "", current.table$Votes, fixed = TRUE)
-    current.table$Votes <- gsub(".", "", current.table$Votes, fixed = TRUE)
-    current.table$Votes <- as.numeric(current.table$Votes)
-    current.table$Percentage <- as.numeric(current.table$Percentage)
-    
     #Check for turnout
     if ( any(str_detect(current.table$Party, "Turnout")) != TRUE ){
       
@@ -238,6 +210,35 @@ for (a in 1:nrow(years) ){
       current.table <- rbind(current.table, elector.table)
       
     }
+    
+    current.table$Votes[current.table$Unopposed == "Y"] <- current.table$Votes[current.table$Party == "Electors"]
+    current.table$Percentage[current.table$Unopposed == "Y"] <- 100
+    
+    
+    # current.table <- subset(current.table, str_detect(current.table$Party, "Registered electors") == FALSE)
+    current.table <- subset(current.table, str_detect(current.table$Party, "gain") == FALSE)
+    current.table <- subset(current.table, str_detect(current.table$Party, " hold") == FALSE)
+    # current.table <- subset(current.table, str_detect(current.table$Party, "Turnout") == FALSE)
+    current.table <- subset(current.table, str_detect(current.table$Party, "Majority") == FALSE)
+    current.table <- subset(current.table, str_detect(current.table$Party, " win") == FALSE)
+    current.table <- subset(current.table, str_detect(current.table$Party, "C indicates candidate endorsed by the coalition government.") == FALSE)
+    current.table <- subset(current.table, str_detect(current.table$Party, "Quota") == FALSE)
+    
+    
+    current.table$Party <- gsub("Registered electors", "Electors", current.table$Party)
+    current.table$Candidate <- gsub("Registered electors", "Electors", current.table$Candidate)
+    
+    current.table$Candidate <- gsub("\\[[^][]*]", "", current.table$Candidate)
+    current.table$Votes <- gsub("\\([^][]*)", "", current.table$Votes)
+    current.table$Votes <- gsub("\\[[^][]*]", "", current.table$Votes)
+    current.table$Percentage <- gsub("\\([^][]*)", "", current.table$Percentage)
+    
+    current.table$Votes <- gsub(",", "", current.table$Votes, fixed = TRUE)
+    current.table$Votes <- gsub("*", "", current.table$Votes, fixed = TRUE)
+    current.table$Votes <- gsub(".", "", current.table$Votes, fixed = TRUE)
+    current.table$Votes <- as.numeric(current.table$Votes)
+    current.table$Percentage <- as.numeric(current.table$Percentage)
+    
     
     #Re-calculate percentage
     current.table$Percentage[current.table$Party == "Electors"] <- 100
