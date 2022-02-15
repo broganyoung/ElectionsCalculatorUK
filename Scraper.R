@@ -168,6 +168,14 @@ for (a in 1:nrow(years) ){
       current.table$Unopposed <- "N"
     }
     
+    
+    current.table$Votes <- gsub("\\([^][]*)", "", current.table$Votes)
+    current.table$Votes <- gsub("\\[[^][]*]", "", current.table$Votes)
+    current.table$Votes <- gsub(",", "", current.table$Votes, fixed = TRUE)
+    current.table$Votes <- gsub("*", "", current.table$Votes, fixed = TRUE)
+    current.table$Votes <- gsub(".", "", current.table$Votes, fixed = TRUE)
+    current.table$Votes <- as.numeric(current.table$Votes)
+    
     #Check for turnout
     if ( any(str_detect(current.table$Party, "Turnout")) != TRUE ){
       
@@ -229,14 +237,8 @@ for (a in 1:nrow(years) ){
     current.table$Candidate <- gsub("Registered electors", "Electors", current.table$Candidate)
     
     current.table$Candidate <- gsub("\\[[^][]*]", "", current.table$Candidate)
-    current.table$Votes <- gsub("\\([^][]*)", "", current.table$Votes)
-    current.table$Votes <- gsub("\\[[^][]*]", "", current.table$Votes)
     current.table$Percentage <- gsub("\\([^][]*)", "", current.table$Percentage)
     
-    current.table$Votes <- gsub(",", "", current.table$Votes, fixed = TRUE)
-    current.table$Votes <- gsub("*", "", current.table$Votes, fixed = TRUE)
-    current.table$Votes <- gsub(".", "", current.table$Votes, fixed = TRUE)
-    current.table$Votes <- as.numeric(current.table$Votes)
     current.table$Percentage <- as.numeric(current.table$Percentage)
     
     
