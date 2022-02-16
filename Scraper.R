@@ -26,14 +26,17 @@ constituencies.mm <- c()
 for ( a in 1:length(constituencies) ){
   
   temp <- as.data.frame(constituencies[[a]])
-  temp[,c("From", "Until", "Prot", "<1832", "1832", "<1707", "1707", "<1801", "1801", "Historic County", "Historic Shire or County")] <- list(NULL)
   
   if ( any(names(temp) == "1922") != TRUE ){
     temp["1922"] <- "-"
   }
   if ( any(names(temp) == "1868") != TRUE ){
     temp["1868"] <- "-"
+    temp[["1868"]][temp["1832"] == "2"] <- "2"
   }
+  
+  temp[,c("From", "Until", "Prot", "<1832", "1832", "<1707", "1707", "<1801", "1801", "Historic County", "Historic Shire or County")] <- list(NULL)
+  
   constituencies.mm <- rbind(constituencies.mm, temp)
   
 }
@@ -114,7 +117,8 @@ for (a in 1:nrow(years) ){
                        Candidate = rep(NA,20000),
                        Votes = rep(NA,20000),
                        Percentage = rep(NA,20000),
-                       Unopposed = rep(NA,20000))
+                       Unopposed = rep(NA,20000),
+                       Winner = rep(NA,20000))
   tables.count <- 0
   
   #Use the lists of MPs for each election to get a list of all the constituencies in that year
