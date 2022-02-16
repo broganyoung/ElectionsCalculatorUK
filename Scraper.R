@@ -155,8 +155,19 @@ for (a in 1:nrow(years) ){
     mm.sub <- subset(constituencies.mm, constituencies.mm$Constituency == constituencies.links$names[b])
     if ( nrow(mm.sub) == 0 ){
       
-      seats <- 1
+      mm.sub <- subset(constituencies.mm, gsub(" County", "", constituencies.mm$Constituency) == constituencies.links$names[b])
       
+      
+      if ( nrow(mm.sub) == 0 ){
+        
+        seats <- 1
+      } else {
+        
+        mm.sub <- mm.sub[-1]
+        mm.sub <- mm.sub[,names(mm.sub) <= years$year.number[a]]
+        seats <- mm.sub[length(mm.sub)]
+    
+      }
     } else {
       
       mm.sub <- mm.sub[-1]
@@ -317,6 +328,10 @@ for (a in 1:nrow(years) ){
     
     tables[(tables.count + 1):(nrow(current.table) + tables.count), ] <- current.table
     tables.count <- tables.count + nrow(current.table)
+    
+    if ( current.table$Percentage[current.table$Party == "Turnout"] > 100){
+      cat(paste("\n AAAAAAAAAAH"))
+    }
     
   }
   
