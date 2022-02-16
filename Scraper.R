@@ -301,6 +301,19 @@ for (a in 1:nrow(years) ){
     current.table$Percentage[current.table$Party == "Turnout"] <- round(current.table$Votes[current.table$Party == "Turnout"]/current.table$Votes[current.table$Party == "Electors"]*100, 2)
     current.table$Percentage[current.table$Party != "Turnout" & current.table$Party != "Electors"] <- round(current.table$Votes[current.table$Party != "Turnout" & current.table$Party != "Electors"]/current.table$Votes[current.table$Party == "Turnout"]*100, 2)
     
+    #Get Winner
+    
+    current.table$Winner <- "N"
+    current.table$Winner.rank <- 99
+    current.table$Winner.rank[current.table$Party != "Electors" & current.table$Party != "Turnout"] <- rank(-subset(current.table$Votes, current.table$Party != "Electors" & current.table$Party != "Turnout"))
+    
+    current.table$Winner[current.table$Winner.rank <= seats] <- "Y"
+    
+    current.table <- current.table[-9]
+    
+    tables[(tables.count + 1):(nrow(current.table) + tables.count), ] <- current.table
+    tables.count <- tables.count + nrow(current.table)
+    
   }
   
   tables <- subset(tables, is.na(tables$Year) == FALSE)
