@@ -308,7 +308,7 @@ for (a in 1:nrow(years) ){
                                 Unopposed = current.table$Unopposed[1])
     
     current.table <- rbind(current.table, turnout.table)
-    current.table$Votes[current.table$Party == "Turnout"] <- current.table$Votes[current.table$Party == "Turnout"]/seats
+    current.table$Votes[current.table$Party == "Turnout"] <- round(current.table$Votes[current.table$Party == "Turnout"]/seats)
     
     
     #Re-calculate percentage
