@@ -13,6 +13,58 @@ library("magrittr")
 library("dplyr")
 library("stringr")
 
+
+
+#Scrape multi-member constituencies from Wikipedia
+constituencies.url <- read_html("https://en.wikipedia.org/wiki/List_of_multi-member_constituencies_in_the_United_Kingdom_and_predecessor_Parliaments")
+
+constituencies <- constituencies.url %>%
+  html_nodes("table") %>%
+  html_table()
+
+constituencies.mm <- c()
+for ( a in 1:length(constituencies) ){
+  
+  temp <- as.data.frame(constituencies[[a]])
+  temp[,c("From", "Until", "Prot", "<1832", "1832", "<1707", "1707", "<1801", "1801", "Historic County", "Historic Shire or County")] <- list(NULL)
+  
+  if ( any(names(temp) == "1922") != TRUE ){
+    temp["1922"] <- "-"
+  }
+  if ( any(names(temp) == "1868") != TRUE ){
+    temp["1868"] <- "-"
+  }
+  constituencies.mm <- rbind(constituencies.mm, temp)
+  
+}
+
+constituencies.mm[,2] <- as.numeric(constituencies.mm[,2])
+constituencies.mm[,3] <- as.numeric(constituencies.mm[,3])
+constituencies.mm[,4] <- as.numeric(constituencies.mm[,4])
+constituencies.mm[,5] <- as.numeric(constituencies.mm[,5])
+constituencies.mm[is.na(constituencies.mm)] <- 0
+constituencies.mm$Sum <- rowSums(constituencies.mm[-1])
+constituencies.mm <- subset(constituencies.mm, constituencies.mm$Sum > 0)
+constituencies.mm <- constituencies.mm[-6]
+
+#Scrape list of Irish counties, they all had 2 members until 1885
+constituencies.url <- read_html("https://en.wikipedia.org/wiki/List_of_Irish_counties_by_population")
+
+constituencies <- constituencies.url %>%
+  html_nodes("table") %>%
+  html_table(fill = TRUE)
+
+constituencies <- constituencies[[1]]
+constituencies <- constituencies[2]
+constituencies[,1] <- paste(constituencies[,1], "County")
+names(constituencies) <- c("Constituency")
+constituencies["1868"] <- 2
+constituencies["1885"] <- 2
+constituencies["1918"] <- 0
+constituencies["1922"] <- 0
+
+constituencies.mm <- rbind(constituencies.mm, constituencies)
+
 #Get Years of Elections
 
 
@@ -85,6 +137,7 @@ for (a in 1:nrow(years) ){
   constituencies.links$names <- gsub("/wiki/", "", constituencies.links$link)
   constituencies.links$names <- gsub("_(UK_Parliament_constituency)", "",constituencies.links$names, fixed = TRUE)
   constituencies.links$names <- gsub("_", " ", constituencies.links$names, fixed = TRUE)
+  constituencies.links$names <- gsub("\\([^][]*)", "", constituencies.links$names)
   
   constituencies.links <- unique(constituencies.links)
   
@@ -93,6 +146,23 @@ for (a in 1:nrow(years) ){
     
     cat(paste(years$year.name[a], constituencies.links$names[b], "( a =", a, "/ b =", b, ")", "\n"))
     
+    #First get the number of seats in constituency
+    
+    mm.sub <- subset(constituencies.mm, constituencies.mm$Constituency == constituencies.links$names[b])
+    if ( nrow(mm.sub) == 0 ){
+      
+      seats <- 1
+      
+    } else {
+      
+      mm.sub <- mm.sub[-1]
+      mm.sub <- mm.sub[,names(mm.sub) <= years$year.number[a]]
+      seats <- mm.sub[length(mm.sub)]
+      
+    }
+    
+    
+    #Start to scrape constituency page
     constituency.url <- paste("https://en.wikipedia.org", constituencies.links$links[b], sep = "")
     
     constituency.page <- read_html(constituency.url)
@@ -161,7 +231,6 @@ for (a in 1:nrow(years) ){
                               "Votes",
                               "Percentage")
     
-    
     if ( any(str_detect(current.table$Votes, regex("Unopposed", ignore_case = TRUE))) == TRUE){
       current.table$Unopposed <- "Y"
     } else {
@@ -169,39 +238,8 @@ for (a in 1:nrow(years) ){
     }
     
     
-    current.table$Votes <- gsub("\\([^][]*)", "", current.table$Votes)
-    current.table$Votes <- gsub("\\[[^][]*]", "", current.table$Votes)
-    current.table$Votes <- gsub(",", "", current.table$Votes, fixed = TRUE)
-    current.table$Votes <- gsub("*", "", current.table$Votes, fixed = TRUE)
-    current.table$Votes <- gsub(".", "", current.table$Votes, fixed = TRUE)
-    current.table$Votes <- as.numeric(current.table$Votes)
-    
-    #Check for turnout
-    if ( any(str_detect(current.table$Party, "Turnout")) != TRUE ){
-      
-      if ( any(str_detect(current.table$Unopposed, "Y")) == TRUE ) {
-        
-        turnout.votes <- current.table$Votes[1]
-        turnout.percent <- 100
-        
-      } else {
-        
-        turnout.votes <- sum(current.table$Votes)
-        turnout.percent <- NA
-        
-      }
-      
-      turnout.table <- data.frame(Year = years$year.name[a],
-                                  Constituency = constituencies.links$names[b],
-                                  Party = "Turnout",
-                                  Candidate = "Turnout",
-                                  Votes = turnout.votes,
-                                  Percentage = turnout.percent,
-                                  Unopposed = current.table$Unopposed[1])
-      
-      current.table <- rbind(current.table, turnout.table)
-      
-    }
+    current.table$Party <- gsub("Registered electors", "Electors", current.table$Party)
+    current.table$Candidate <- gsub("Registered electors", "Electors", current.table$Candidate)
     
     
     #Check for registered electors
@@ -226,29 +264,42 @@ for (a in 1:nrow(years) ){
     # current.table <- subset(current.table, str_detect(current.table$Party, "Registered electors") == FALSE)
     current.table <- subset(current.table, str_detect(current.table$Party, "gain") == FALSE)
     current.table <- subset(current.table, str_detect(current.table$Party, " hold") == FALSE)
-    # current.table <- subset(current.table, str_detect(current.table$Party, "Turnout") == FALSE)
+    current.table <- subset(current.table, str_detect(current.table$Party, "Turnout") == FALSE)
     current.table <- subset(current.table, str_detect(current.table$Party, "Majority") == FALSE)
     current.table <- subset(current.table, str_detect(current.table$Party, " win") == FALSE)
     current.table <- subset(current.table, str_detect(current.table$Party, "C indicates candidate endorsed by the coalition government.") == FALSE)
     current.table <- subset(current.table, str_detect(current.table$Party, "Quota") == FALSE)
     
     
-    current.table$Party <- gsub("Registered electors", "Electors", current.table$Party)
-    current.table$Candidate <- gsub("Registered electors", "Electors", current.table$Candidate)
     
     current.table$Candidate <- gsub("\\[[^][]*]", "", current.table$Candidate)
+    current.table$Votes <- gsub("\\([^][]*)", "", current.table$Votes)
+    current.table$Votes <- gsub("\\[[^][]*]", "", current.table$Votes)
     current.table$Percentage <- gsub("\\([^][]*)", "", current.table$Percentage)
     
+    current.table$Votes <- gsub(",", "", current.table$Votes, fixed = TRUE)
+    current.table$Votes <- gsub("*", "", current.table$Votes, fixed = TRUE)
+    current.table$Votes <- gsub(".", "", current.table$Votes, fixed = TRUE)
+    current.table$Votes <- as.numeric(current.table$Votes)
     current.table$Percentage <- as.numeric(current.table$Percentage)
+    
+    #Add turnout
+    turnout.table <- data.frame(Year = years$year.name[a],
+                                Constituency = constituencies.links$names[b],
+                                Party = "Turnout",
+                                Candidate = "Turnout",
+                                Votes = sum(subset(current.table$Votes, current.table$Party != "Electors")),
+                                Percentage = NA,
+                                Unopposed = current.table$Unopposed[1])
+    
+    current.table <- rbind(current.table, turnout.table)
+    current.table$Votes[current.table$Party == "Turnout"] <- current.table$Votes[current.table$Party == "Turnout"]/seats
     
     
     #Re-calculate percentage
     current.table$Percentage[current.table$Party == "Electors"] <- 100
     current.table$Percentage[current.table$Party == "Turnout"] <- round(current.table$Votes[current.table$Party == "Turnout"]/current.table$Votes[current.table$Party == "Electors"]*100, 2)
     current.table$Percentage[current.table$Party != "Turnout" & current.table$Party != "Electors"] <- round(current.table$Votes[current.table$Party != "Turnout" & current.table$Party != "Electors"]/current.table$Votes[current.table$Party == "Turnout"]*100, 2)
-    
-    tables[(tables.count + 1):(nrow(current.table) + tables.count), ] <- current.table
-    tables.count <- tables.count + nrow(current.table)
     
   }
   
