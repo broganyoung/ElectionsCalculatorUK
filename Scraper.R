@@ -65,6 +65,7 @@ constituencies.mm <- rbind(constituencies.mm, constituencies)
 #Have to do a few manual changes because of course
 
 constituencies.mm$Seats <- 2
+
 constituencies.mm$Seats[constituencies.mm$Constituency == "Berkshire"] <- 3
 constituencies.mm$Seats[constituencies.mm$Constituency == "Buckinghamshire"] <- 3
 constituencies.mm$Seats[constituencies.mm$Constituency == "Cambridgeshire"] <- 3
@@ -78,7 +79,7 @@ constituencies.mm$Seats[constituencies.mm$Constituency == "Combined Scottish Uni
 constituencies.mm$Seats[constituencies.mm$Constituency == "Hertfordshire"] <- 3
 
 
-constituencies.mm$Until[constituencies.mm$Constituency == "Beverley"] <- 1867
+constituencies.mm$Until[constituencies.mm$Constituency == "Beverley"] <- 1869
 
 
 #Get Years of Elections
@@ -237,14 +238,14 @@ for (a in 1:nrow(years) ){
         
         seats <- mm.sub$Seats
         
-        if ( years$year.number >= 1863 & ( constituencies.links$names[b] == "Birmingham"
+        if ( years$year.number[a] >= 1863 & ( constituencies.links$names[b] == "Birmingham"
                                          | constituencies.links$names[b] == "Leeds" 
                                          | constituencies.links$names[b] == "Manchester"
                                          | constituencies.links$names[b] == "Glasgow" )){
           seats <- 3
         }
         
-        if ( years$year.number >= 1863 & ( constituencies.links$names[b] == "City of London")){
+        if ( years$year.number[a] >= 1863 & ( constituencies.links$names[b] == "City of London")){
           
           seats <- 2
         }
