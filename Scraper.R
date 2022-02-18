@@ -27,28 +27,16 @@ for ( a in 1:length(constituencies) ){
   
   temp <- as.data.frame(constituencies[[a]])
   
-  if ( any(names(temp) == "1922") != TRUE ){
-    temp["1922"] <- "-"
-  }
-  if ( any(names(temp) == "1868") != TRUE ){
-    temp["1868"] <- "-"
-    temp[["1868"]][temp["1832"] == "2"] <- "2"
-  }
-  
-  temp[,c("From", "Until", "Prot", "<1832", "1832", "<1707", "1707", "<1801", "1801", "Historic County", "Historic Shire or County")] <- list(NULL)
+  temp <- temp[,c("Constituency", "From", "Until")]
   
   constituencies.mm <- rbind(constituencies.mm, temp)
   
 }
 
-constituencies.mm[,2] <- as.numeric(constituencies.mm[,2])
-constituencies.mm[,3] <- as.numeric(constituencies.mm[,3])
-constituencies.mm[,4] <- as.numeric(constituencies.mm[,4])
-constituencies.mm[,5] <- as.numeric(constituencies.mm[,5])
-constituencies.mm[is.na(constituencies.mm)] <- 0
-constituencies.mm$Sum <- rowSums(constituencies.mm[-1])
-constituencies.mm <- subset(constituencies.mm, constituencies.mm$Sum > 0)
-constituencies.mm <- constituencies.mm[-6]
+constituencies.mm$From <- gsub("[^0-9.-]", "", constituencies.mm$From)
+constituencies.mm$Until <- gsub("[^0-9.-]", "", constituencies.mm$Until)
+constituencies.mm$From <- as.numeric(constituencies.mm$From)
+constituencies.mm$Until <- as.numeric(constituencies.mm$Until)
 
 #Scrape list of Irish counties, they all had 2 members until 1885
 constituencies.url <- read_html("https://en.wikipedia.org/wiki/List_of_Irish_counties_by_population")
@@ -61,19 +49,15 @@ constituencies <- constituencies[[1]]
 constituencies <- constituencies[2]
 constituencies[,1] <- paste(constituencies[,1], "County")
 names(constituencies) <- c("Constituency")
-constituencies["1868"] <- 2
-constituencies["1885"] <- 2
-constituencies["1918"] <- 0
-constituencies["1922"] <- 0
+constituencies["From"] <- 1801
+constituencies["Until"] <- 1885
 
 constituencies.mm <- rbind(constituencies.mm, constituencies)
 
 
 constituencies <- data.frame(Constituency = c("King's County", "Queen's County"))
-constituencies["1868"] <- 2
-constituencies["1885"] <- 2
-constituencies["1918"] <- 0
-constituencies["1922"] <- 0
+constituencies["From"] <- 1801
+constituencies["Until"] <- 1885
 
 constituencies.mm <- rbind(constituencies.mm, constituencies)
 
@@ -160,7 +144,7 @@ for (a in 1:nrow(years) ){
   constituencies.links <- unique(constituencies.links)
   
   #Go through all the constituencies for the election
-  for (b in c:nrow(constituencies.links) ){
+  for (b in 1:nrow(constituencies.links) ){
     
     cat(paste(years$year.name[a], constituencies.links$names[b], "( a =", a, "/ b =", b, ")", "\n"))
     
@@ -210,6 +194,7 @@ for (a in 1:nrow(years) ){
     #First get the number of seats in constituency
     
     mm.sub <- subset(constituencies.mm, constituencies.mm$Constituency == constituencies.links$names[b])
+    seat.check <- 0
     if ( nrow(mm.sub) == 0 ){
       
       mm.sub <- subset(constituencies.mm, gsub(" County", "", constituencies.mm$Constituency) == constituencies.links$names[b])
@@ -221,29 +206,21 @@ for (a in 1:nrow(years) ){
         if ( nrow(mm.sub) == 0 ){
           
           seats <- 1
+          seat.check <- 1
           
-        } else {
-          
-          mm.sub <- mm.sub[-1]
-          mm.sub <- mm.sub[,names(mm.sub) <= years$year.number[a]]
-          seats <- mm.sub[length(mm.sub)]
-          
-        } 
-      } else {
-        
-        mm.sub <- mm.sub[-1]
-        mm.sub <- mm.sub[,names(mm.sub) <= years$year.number[a]]
-        seats <- mm.sub[length(mm.sub)]
-        
+        }
       }
-    } else {
-      
-      mm.sub <- mm.sub[-1]
-      mm.sub <- mm.sub[,names(mm.sub) <= years$year.number[a]]
-      seats <- mm.sub[length(mm.sub)]
-      
     }
     
+    if ( seat.check == 0 ){
+      if ( years$year.number[a] >= mm.sub$From & years$year.number[a] < mm.sub$Until ){
+        seats <- 2
+      } else {
+        seats <- 1
+      }
+    }
+    
+    seats <- as.vector(seats, mode = "numeric")
     
     #Start to scrape constituency page
     constituency.url <- paste("https://en.wikipedia.org", constituencies.links$links[b], sep = "")
@@ -397,7 +374,15 @@ for (a in 1:nrow(years) ){
     tables[(tables.count + 1):(nrow(current.table) + tables.count), ] <- current.table
     tables.count <- tables.count + nrow(current.table)
     
-    if ( current.table$Percentage[current.table$Party == "Turnout"] > 100){
+    if ( current.table$Percentage[current.table$Party == "Turnout"] > 100 ){
+      cat(paste("\n AAAAAAAAAAH"))
+    }
+    if ( round(sum(subset(current.table$Percentage, current.table$Party != "Electors" & current.table$Party != "Turnout"))) > 100 
+         & nrow(subset(current.table, current.table$Winner == "Y")) < 2 ){
+      cat(paste("\n AAAAAAAAAAH"))
+    }
+    if ( seats > 1 
+         & nrow(subset(current.table, current.table$Winner == "Y")) < 2 ){
       cat(paste("\n AAAAAAAAAAH"))
     }
     
