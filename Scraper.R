@@ -61,6 +61,26 @@ constituencies["Until"] <- 1885
 
 constituencies.mm <- rbind(constituencies.mm, constituencies)
 
+
+#Have to do a few manual changes because of course
+
+constituencies.mm$Seats <- 2
+constituencies.mm$Seats[constituencies.mm$Constituency == "Berkshire"] <- 3
+constituencies.mm$Seats[constituencies.mm$Constituency == "Buckinghamshire"] <- 3
+constituencies.mm$Seats[constituencies.mm$Constituency == "Cambridgeshire"] <- 3
+constituencies.mm$Seats[constituencies.mm$Constituency == "Dorset"] <- 3
+constituencies.mm$Seats[constituencies.mm$Constituency == "Herefordshire"] <- 3
+constituencies.mm$Seats[constituencies.mm$Constituency == "Hertfordshire"] <- 3
+constituencies.mm$Seats[constituencies.mm$Constituency == "City of London"] <- 4
+
+constituencies.mm$Seats[constituencies.mm$Constituency == "Oxfordshire"] <- 3
+constituencies.mm$Seats[constituencies.mm$Constituency == "Combined Scottish Universities"] <- 3
+constituencies.mm$Seats[constituencies.mm$Constituency == "Hertfordshire"] <- 3
+
+
+constituencies.mm$Until[constituencies.mm$Constituency == "Beverley"] <- 1867
+
+
 #Get Years of Elections
 
 
@@ -214,7 +234,21 @@ for (a in 1:nrow(years) ){
     
     if ( seat.check == 0 ){
       if ( years$year.number[a] >= mm.sub$From & years$year.number[a] < mm.sub$Until ){
-        seats <- 2
+        
+        seats <- mm.sub$Seats
+        
+        if ( years$year.number >= 1863 & ( constituencies.links$names[b] == "Birmingham"
+                                         | constituencies.links$names[b] == "Leeds" 
+                                         | constituencies.links$names[b] == "Manchester"
+                                         | constituencies.links$names[b] == "Glasgow" )){
+          seats <- 3
+        }
+        
+        if ( years$year.number >= 1863 & ( constituencies.links$names[b] == "City of London")){
+          
+          seats <- 2
+        }
+        
       } else {
         seats <- 1
       }
