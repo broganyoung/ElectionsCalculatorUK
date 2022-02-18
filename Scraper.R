@@ -68,6 +68,15 @@ constituencies["1922"] <- 0
 
 constituencies.mm <- rbind(constituencies.mm, constituencies)
 
+
+constituencies <- data.frame(Constituency = c("King's County", "Queen's County"))
+constituencies["1868"] <- 2
+constituencies["1885"] <- 2
+constituencies["1918"] <- 0
+constituencies["1922"] <- 0
+
+constituencies.mm <- rbind(constituencies.mm, constituencies)
+
 #Get Years of Elections
 
 
@@ -106,6 +115,9 @@ years <- years[order(years$year.number, decreasing = FALSE), ]
 
 years <- subset(years, years$year.number >= 1868)
 
+
+directions <- c("North", "South", "East", "West", "Mid")
+
 #Results Scraping----
 
 for (a in 1:nrow(years) ){
@@ -143,12 +155,57 @@ for (a in 1:nrow(years) ){
   constituencies.links$names <- gsub("_", " ", constituencies.links$names, fixed = TRUE)
   constituencies.links$names <- gsub("\\([^][]*)", "", constituencies.links$names)
   
+  constituencies.links$names <- gsub("Merthyr Tydvil", "Merthyr Tydfil", constituencies.links$names)
+  
   constituencies.links <- unique(constituencies.links)
   
   #Go through all the constituencies for the election
-  for (b in 1:nrow(constituencies.links) ){
+  for (b in c:nrow(constituencies.links) ){
     
     cat(paste(years$year.name[a], constituencies.links$names[b], "( a =", a, "/ b =", b, ")", "\n"))
+    
+    
+    #Format Constituency Name (I hate wikipedia)
+    if ( lengths(gregexpr("[[:alpha:]]+", constituencies.links$names[b])) > 1 & str_detect(constituencies.links$names[b], "-") == FALSE ){
+      
+      for( c in 1:length(directions) ){
+        if ( str_split(constituencies.links$names[b], " ")[[1]][2] == directions[c] & str_detect(constituencies.links$names[b], "Lancashire") == FALSE 
+                                                                                    & str_detect(constituencies.links$names[b], "Yorkshire") == FALSE ){
+          
+          constituencies.links$names[b] <- gsub(paste(" ", directions[c], sep = ""), "", constituencies.links$names[b])
+          constituencies.links$names[b] <- paste(directions[c], " ", constituencies.links$names[b], sep = "")
+          
+        }
+        
+        if ( str_detect(constituencies.links$names[b], "West Riding") & str_detect(constituencies.links$names[b], directions[c]) 
+                                                                      & directions[c] != "West"){
+          
+          constituencies.links$names[b] <- gsub(paste(" ", directions[c], sep = ""), "", constituencies.links$names[b])
+          constituencies.links$names[b] <- paste(directions[c], "ern ", constituencies.links$names[b], sep = "")
+          
+        }
+      }
+    }
+    if ( str_detect(constituencies.links$names[b], " City") == TRUE & str_detect(constituencies.links$names[b], "Cork") == FALSE  
+                                                                    & str_detect(constituencies.links$names[b], "Dublin") == FALSE
+                                                                    & str_detect(constituencies.links$names[b], "Limerick") == FALSE 
+                                                                    & str_detect(constituencies.links$names[b], "Waterford") == FALSE ){
+      
+      constituencies.links$names[b] <- gsub(" City", "", constituencies.links$names[b])
+      constituencies.links$names[b] <- paste("City of", constituencies.links$names[b])
+      
+    }
+    if ( constituencies.links$names[b] == "Chester" ){
+      
+      constituencies.links$names[b] <- "City of Chester"
+      
+    }
+    
+    
+    constituencies.links$names[b] <- trimws(constituencies.links$names[b])
+    constituencies.links$names[b] <- gsub("%27", "'", constituencies.links$names[b], fixed = TRUE)
+    
+  
     
     #First get the number of seats in constituency
     
@@ -157,16 +214,27 @@ for (a in 1:nrow(years) ){
       
       mm.sub <- subset(constituencies.mm, gsub(" County", "", constituencies.mm$Constituency) == constituencies.links$names[b])
       
-      
       if ( nrow(mm.sub) == 0 ){
         
-        seats <- 1
+        mm.sub <- subset(constituencies.mm, paste("County", gsub(" County", "", constituencies.mm$Constituency)) == constituencies.links$names[b])
+        
+        if ( nrow(mm.sub) == 0 ){
+          
+          seats <- 1
+          
+        } else {
+          
+          mm.sub <- mm.sub[-1]
+          mm.sub <- mm.sub[,names(mm.sub) <= years$year.number[a]]
+          seats <- mm.sub[length(mm.sub)]
+          
+        } 
       } else {
         
         mm.sub <- mm.sub[-1]
         mm.sub <- mm.sub[,names(mm.sub) <= years$year.number[a]]
         seats <- mm.sub[length(mm.sub)]
-    
+        
       }
     } else {
       
