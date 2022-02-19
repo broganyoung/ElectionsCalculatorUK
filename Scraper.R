@@ -72,11 +72,10 @@ constituencies.mm$Seats[constituencies.mm$Constituency == "Cambridgeshire"] <- 3
 constituencies.mm$Seats[constituencies.mm$Constituency == "Dorset"] <- 3
 constituencies.mm$Seats[constituencies.mm$Constituency == "Herefordshire"] <- 3
 constituencies.mm$Seats[constituencies.mm$Constituency == "Hertfordshire"] <- 3
+constituencies.mm$Seats[constituencies.mm$Constituency == "Liverpool"] <- 3
 constituencies.mm$Seats[constituencies.mm$Constituency == "City of London"] <- 4
-
 constituencies.mm$Seats[constituencies.mm$Constituency == "Oxfordshire"] <- 3
 constituencies.mm$Seats[constituencies.mm$Constituency == "Combined Scottish Universities"] <- 3
-constituencies.mm$Seats[constituencies.mm$Constituency == "Hertfordshire"] <- 3
 
 
 constituencies.mm$Until[constituencies.mm$Constituency == "Beverley"] <- 1869
@@ -125,6 +124,9 @@ directions <- c("North", "South", "East", "West", "Mid")
 
 #Results Scraping----
 
+
+check <- c()
+          
 for (a in 1:nrow(years) ){
   
   
@@ -205,6 +207,12 @@ for (a in 1:nrow(years) ){
       constituencies.links$names[b] <- "City of Chester"
       
     }
+    if ( constituencies.links$names[b] == "City of York" & years$year.number[a] < 1997){
+      
+      constituencies.links$names[b] <- "York"
+      
+    }
+    
     
     
     constituencies.links$names[b] <- trimws(constituencies.links$names[b])
@@ -245,7 +253,7 @@ for (a in 1:nrow(years) ){
           seats <- 3
         }
         
-        if ( years$year.number[a] >= 1863 & ( constituencies.links$names[b] == "City of London")){
+        if ( years$year.number[a] >= 1885 & ( constituencies.links$names[b] == "City of London")){
           
           seats <- 2
         }
@@ -276,7 +284,8 @@ for (a in 1:nrow(years) ){
       constituency.table <- html_table(constituency.nodes[1], fill = TRUE, header = TRUE)
       
       constituency.table <- as.data.frame(constituency.table)
-      constituency.table <- subset(constituency.table, str_detect(constituency.table$Election, years$year.name[a]) == TRUE)
+      constituency.table <- subset(constituency.table, str_detect(constituency.table$Election, paste("General election", years$year.name[a])) == TRUE
+                                                       | str_detect(constituency.table$Election, paste(years$year.name[a], "general election")) == TRUE)
       
       current.table <- c()
       
@@ -336,6 +345,9 @@ for (a in 1:nrow(years) ){
     current.table$Party <- gsub("Registered electors", "Electors", current.table$Party)
     current.table$Candidate <- gsub("Registered electors", "Electors", current.table$Candidate)
     
+    current.table <- subset(current.table, current.table$Votes != "Withdrew")
+    current.table <- subset(current.table, current.table$Party != "Void election result")
+    current.table <- subset(current.table, current.table$Party != "Rejected ballots")
     
     #Check for registered electors
     if ( any(str_detect(current.table$Party, "Electors")) != TRUE ){
@@ -393,6 +405,8 @@ for (a in 1:nrow(years) ){
     
     #Re-calculate percentage
     current.table$Percentage[current.table$Party == "Electors"] <- 100
+    current.table$Votes[is.na(current.table$Votes)] <- 999999
+    
     current.table$Percentage[current.table$Party == "Turnout"] <- round(current.table$Votes[current.table$Party == "Turnout"]/current.table$Votes[current.table$Party == "Electors"]*100, 2)
     current.table$Percentage[current.table$Party != "Turnout" & current.table$Party != "Electors"] <- round(current.table$Votes[current.table$Party != "Turnout" & current.table$Party != "Electors"]/current.table$Votes[current.table$Party == "Turnout"]*100, 2)
     
@@ -411,14 +425,19 @@ for (a in 1:nrow(years) ){
     
     if ( current.table$Percentage[current.table$Party == "Turnout"] > 100 ){
       cat(paste("\n AAAAAAAAAAH"))
+      
+      check <- rbind(check, current.table)
     }
     if ( round(sum(subset(current.table$Percentage, current.table$Party != "Electors" & current.table$Party != "Turnout"))) > 100 
          & nrow(subset(current.table, current.table$Winner == "Y")) < 2 ){
       cat(paste("\n AAAAAAAAAAH"))
+      
+      check <- rbind(check, current.table)
     }
-    if ( seats > 1 
-         & nrow(subset(current.table, current.table$Winner == "Y")) < 2 ){
+    if ( seats > 1 & nrow(subset(current.table, current.table$Winner == "Y")) < 2 ){
       cat(paste("\n AAAAAAAAAAH"))
+      
+      check <- rbind(check, current.table)
     }
     
   }
